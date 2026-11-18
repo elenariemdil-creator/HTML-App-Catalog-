@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ClassiPod</title>
+  <style>
+:root { font-family: Arial, Helvetica, sans-serif; color: #080808; }
+* { box-sizing: border-box; }
+.visually-hidden { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; clip-path:inset(50%); }
+body { margin: 0; min-height: 100vh; overflow: hidden; display: grid; place-items: center; background: #dfdfdf; }
+body::before { content:""; position:fixed; inset:0; opacity:.5; pointer-events:none; background-image: radial-gradient(#fff 1px, transparent 1.5px), radial-gradient(#aaa 1px, transparent 1.5px); background-size: 7px 7px, 11px 11px; background-position:0 0, 3px 4px; mix-blend-mode:soft-light; }
+.player { width: min(450px, 94vw); height: min(680px, 94vh); display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 10px 0 0; position: relative; }
+.screen-shell { width: 100%; height: 310px; padding: 4px; border: 4px solid #080808; border-radius: 7px; background:#0a0a0a; box-shadow: 0 2px 2px #999; }
+.screen { height:100%; overflow:hidden; background:#fff; position:relative; }
+.screen-top { height: 29px; display:flex; align-items:center; justify-content:space-between; padding:0 7px; font-size:17px; font-weight:bold; background:linear-gradient(#f9f9f9,#c9c9c9); }
+.status { display:flex; gap:8px; align-items:center; color:#43a5e7; font-size:22px; line-height:1; }
+.status i { width:21px; height:10px; border:1px solid #7ca171; background:linear-gradient(90deg,#80c86b 72%,transparent 72%); display:block; position:relative; }
+.status i::after { content:""; position:absolute; right:-4px; top:2px; width:3px; height:5px; background:#7ca171; }
+.screen-content { display:grid; grid-template-columns: 52% 48%; height: calc(100% - 29px); }
+.menu-list { list-style:none; padding:0; margin:0; grid-column:1; font-weight:bold; font-size:18px; line-height:30px; overflow:hidden; }
+.menu-list li { height:30px; padding:0 7px; white-space:nowrap; position:relative; }
+.menu-list li.selected { color:white; background:linear-gradient(#85b9ed,#3d82c8 48%,#6aa2dc); text-shadow:0 1px #21659d; }
+.menu-list li.has-child::after { content:'›'; position:absolute; right:9px; top:-1px; color:inherit; font-size:34px; font-weight:normal; }
+.art { grid-column:2; grid-row:1; position:relative; overflow:hidden; background:linear-gradient(130deg,#f4f7f2 0%,#d5e5e7 27%,#8aa6b3 30%,#e9f3f0 51%,#b4e8fc 52%,#f4f8fd 70%); }
+.art::before { content:""; position:absolute; width:175px; height:175px; border:13px solid rgba(10,38,57,.23); border-left-color:rgba(255,255,255,.7); border-radius:50%; left:-50px; top:-34px; box-shadow:0 0 0 13px rgba(10,38,57,.09),0 0 0 27px rgba(255,255,255,.3); }
+.art::after { content:""; position:absolute; right:34px; top:38px; width:44px; height:158px; border-radius:24px 24px 12px 12px; background:linear-gradient(90deg,#001222,#071a33 60%,#28364c); transform:skew(-4deg); box-shadow:19px 12px 0 -7px #071322; }
+.walker-mark { position:absolute; z-index:2; right:36px; top:67px; font-size:44px; font-weight:900; color:white; transform:scaleX(1.55); font-family:Georgia,serif; }
+.art.music { background:radial-gradient(circle at 80% 48%,#9de3ff 2%,#234d7b 16%,#081322 46%,#03060d 70%); }
+.art.music::before { left:14px; top:46px; border-color:#1596e5; box-shadow:none; width:75px; height:75px; transform:rotate(45deg); border-width:9px; border-right-color:transparent; border-bottom-color:transparent; border-radius:0; }
+.art.music::after { background:linear-gradient(90deg,transparent 38%,#0d76c6 40% 54%,transparent 56%); width:150px; height:135px; right:35px; top:60px; border-radius:0; transform:rotate(-20deg); box-shadow:none; }
+.now-playing { position:absolute; inset:auto 0 0; height:0; background:rgba(0,0,0,.73); color:white; font-size:14px; padding:0 9px; transition:height .2s, padding .2s; overflow:hidden; }
+.now-playing.active { height:30px; padding:7px 9px; }
+.wheel { width:330px; height:330px; position:relative; border-radius:50%; margin-bottom:-4px; background:#fff; box-shadow: inset 0 0 12px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.2); }
+.wheel-btn { position:absolute; border:0; background:transparent; color:#8b969e; font-weight:bold; font-size:16px; cursor:pointer; padding:10px; }
+.wheel-btn:hover { color:#4e5660; }
+.menu-btn { left:50%; top:7px; transform:translateX(-50%); }
+.previous { top:50%; left:4px; transform:translateY(-50%); font-size:14px; letter-spacing:-5px; }
+.next { top:50%; right:4px; transform:translateY(-50%); font-size:14px; letter-spacing:-5px; }
+.play { bottom:5px; left:50%; transform:translateX(-50%); font-size:14px; letter-spacing:1px; }
+.select-btn { position:absolute; inset:97px; border-radius:50%; border:1px solid #aaa; cursor:pointer; background:radial-gradient(circle at 34% 28%,#e5e5e5,#c8c8c8 65%,#b8b8b8); box-shadow:inset 1px 1px 1px #eee; }
+.wheel-hint { position:absolute; width:100%; top:calc(100% + 10px); text-align:center; color:#889197; font-size:12px; opacity:0; transition:opacity .2s; }
+.wheel:hover .wheel-hint { opacity:1; }
+@media (max-height:700px) { .player{height:100vh;padding-top:8px}.screen-shell{height:305px}.wheel{width:310px;height:310px}.select-btn{inset:90px} }
+@media (max-width:500px) { .player{width:94vw}.screen-shell{height: min(310px, 43vh)}.screen-top{font-size:15px}.menu-list{font-size:16px;line-height:28px}.menu-list li{height:28px}.wheel{width: min(330px, 78vw);height:min(330px,78vw)}.select-btn{inset:29%}.art::after{right:23px}.walker-mark{right:25px} }
+  </style>
+</head>
+<body>
+  <main class="player" aria-label="ClassiPod music player">
+    <input id="audioFiles" class="visually-hidden" type="file" accept="audio/wav,.wav" multiple />
+    <section class="screen-shell">
+      <div class="screen" id="screen">
+        <div class="screen-top"><span id="screenTitle">Menu</span><span class="status"><b>Ⅱ</b><i></i></span></div>
+        <div class="screen-content">
+          <ul class="menu-list" id="menuList" aria-live="polite"></ul>
+          <div class="art" id="art" aria-hidden="true"><div class="walker-mark">W</div></div>
+        </div>
+        <div class="now-playing" id="nowPlaying"></div>
+      </div>
+    </section>
+
+    <section class="wheel" aria-label="iPod controls">
+      <button class="wheel-btn menu-btn" id="menuButton" aria-label="Back to menu">MENU</button>
+      <button class="wheel-btn previous" id="previousButton" aria-label="Previous item">◀◀</button>
+      <button class="select-btn" id="selectButton" aria-label="Select"></button>
+      <button class="wheel-btn next" id="nextButton" aria-label="Next item">▶▶</button>
+      <button class="wheel-btn play" id="playButton" aria-label="Play or pause">▶❚❚</button>
+      <div class="wheel-hint">Use ↑ ↓ or the wheel to browse</div>
+    </section>
+  </main>
+  <script>
+const views = {
+  Menu: [{ label: 'Music', child: 'Music' }, { label: 'Settings', child: 'Settings' }, { label: 'Shuffle Songs', action: 'shuffle' }, { label: 'Now Playing', action: 'now' }],
+  Music: [{ label: 'Library', child: 'Library' }, { label: 'Cover Flow', child: 'Cover Flow' }, { label: 'Playlists', child: 'Playlists' }, { label: 'Artists', child: 'Artists' }, { label: 'Albums', child: 'Albums' }, { label: 'Songs', child: 'Songs' }, { label: 'Genres', child: 'Genres' }, { label: 'Search', action: 'search' }],
+  Settings: [{ label: 'Click Wheel Sound', action: 'soundToggle' }, { label: 'About' }, { label: 'Date & Time' }, { label: 'Backlight' }, { label: 'Main Menu' }],
+  'Cover Flow': [{ label: 'Faded — Alan Walker', action: 'playSong' }, { label: 'Spectre — Alan Walker', action: 'playSong' }, { label: 'Firefly — Jim Yosef', action: 'playSong' }],
+  Playlists: [{ label: 'Favorites' }, { label: 'Recently Played' }, { label: 'Top Rated' }],
+  Artists: [{ label: 'Alan Walker', child: 'Cover Flow' }, { label: 'Jim Yosef', child: 'Cover Flow' }],
+  Albums: [{ label: 'Different World', child: 'Cover Flow' }, { label: 'Hope', child: 'Cover Flow' }],
+  Songs: [{ label: 'Faded', action: 'playSong' }, { label: 'Spectre', action: 'playSong' }, { label: 'Firefly', action: 'playSong' }],
+  Genres: [{ label: 'Electronic' }, { label: 'Dance' }, { label: 'Pop' }],
+};
+const list = document.querySelector('#menuList'); const title = document.querySelector('#screenTitle'); const art = document.querySelector('#art'); const nowPlaying = document.querySelector('#nowPlaying'); const filePicker = document.querySelector('#audioFiles'); const audio = new Audio();
+let tracks = []; let stack = ['Menu']; let index = 0; let playing = false;
+let wheelSoundOn = localStorage.getItem('classipod-wheel-sound') !== 'false';
+let soundContext;
+audio.preload = 'auto';
+function clickSound(kind = 'tick') {
+  if (!wheelSoundOn) return;
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContext) return;
+  soundContext ??= new AudioContext();
+  if (soundContext.state === 'suspended') soundContext.resume();
+  const oscillator = soundContext.createOscillator(); const gain = soundContext.createGain();
+  oscillator.type = 'square'; oscillator.frequency.value = kind === 'select' ? 520 : 780;
+  gain.gain.setValueAtTime(kind === 'select' ? 0.045 : 0.025, soundContext.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, soundContext.currentTime + (kind === 'select' ? 0.055 : 0.028));
+  oscillator.connect(gain).connect(soundContext.destination); oscillator.start(); oscillator.stop(soundContext.currentTime + 0.06);
+}
+function updateMediaSession(trackName = audio.dataset.trackName || 'ClassiPod') {
+  if (!('mediaSession' in navigator)) return;
+  navigator.mediaSession.metadata = new MediaMetadata({ title: trackName, artist: 'ClassiPod Library', album: 'Local WAV files' });
+  navigator.mediaSession.playbackState = playing ? 'playing' : 'paused';
+}
+const view = () => stack.at(-1);
+const database = new Promise((resolve, reject) => { const request = indexedDB.open('classipod-library', 1); request.onupgradeneeded = () => request.result.createObjectStore('tracks', { keyPath: 'id' }); request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); });
+const dbRequest = async (mode, operation) => new Promise(async (resolve, reject) => { try { const db = await database; const request = operation(db.transaction('tracks', mode).objectStore('tracks')); request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); } catch (error) { reject(error); } });
+const itemsFor = (name) => name === 'Library' ? [{ label: 'Add WAV files…', action: 'import' }, ...tracks.map(track => ({ label: track.name, action: 'playTrack', id: track.id }))] : (views[name] || []);
+const saveTrackIndex = () => localStorage.setItem('classipod-track-library', JSON.stringify(tracks.map(({ id, name, addedAt }) => ({ id, name, addedAt }))));
+async function restoreLibrary() { try { const records = await dbRequest('readonly', store => store.getAll()); tracks = records.map(({ id, name, addedAt }) => ({ id, name, addedAt })); saveTrackIndex(); render(); } catch { nowPlaying.textContent = 'Local library is unavailable'; nowPlaying.classList.add('active'); } }
+function render() { const current = itemsFor(view()); title.textContent = view(); list.innerHTML = current.map((item, i) => `<li class="${i === index ? 'selected' : ''} ${item.child ? 'has-child' : ''}">${item.label}</li>`).join(''); art.classList.toggle('music', view() !== 'Menu' && view() !== 'Settings'); index = Math.min(index, Math.max(0, current.length - 1)); [...list.children].forEach((item, i) => item.classList.toggle('selected', i === index)); }
+function move(step) { const n = itemsFor(view()).length; index = (index + step + n) % n; clickSound(); render(); }
+async function playTrack(trackId) { const track = await dbRequest('readonly', store => store.get(trackId)); if (!track) { nowPlaying.textContent = 'That file is no longer available'; nowPlaying.classList.add('active'); return; } if (audio.dataset.trackId !== trackId) { if (audio.src.startsWith('blob:')) URL.revokeObjectURL(audio.src); audio.src = URL.createObjectURL(track.blob); audio.dataset.trackId = trackId; audio.dataset.trackName = track.name; } await audio.play(); playing = true; updateMediaSession(track.name); nowPlaying.textContent = `Now playing: ${track.name}`; nowPlaying.classList.add('active'); }
+async function select() { const choice = itemsFor(view())[index]; if (!choice) return; clickSound('select'); if (choice.child) { stack.push(choice.child); index = 0; render(); return; } if (choice.action === 'import') { filePicker.click(); return; } if (choice.action === 'playTrack') { await playTrack(choice.id); return; } if (choice.action === 'soundToggle') { wheelSoundOn = !wheelSoundOn; localStorage.setItem('classipod-wheel-sound', wheelSoundOn); nowPlaying.textContent = `Click wheel sound ${wheelSoundOn ? 'on' : 'off'}`; nowPlaying.classList.add('active'); return; } if (choice.action === 'shuffle') { nowPlaying.textContent = 'Shuffling songs…'; nowPlaying.classList.add('active'); } else if (choice.action === 'search') { nowPlaying.textContent = 'Search is ready'; nowPlaying.classList.add('active'); } else if (choice.action === 'playSong' && tracks.length) { await playTrack(tracks[0].id); } else { playing = true; nowPlaying.textContent = choice.action === 'now' ? 'Nothing is playing' : 'Add WAV files in Music → Library'; nowPlaying.classList.add('active'); } }
+function back() { if (stack.length > 1) { clickSound('select'); stack.pop(); index = 0; nowPlaying.classList.remove('active'); render(); } }
+document.querySelector('#selectButton').addEventListener('click', select); document.querySelector('#menuButton').addEventListener('click', back); document.querySelector('#previousButton').addEventListener('click', () => move(-1)); document.querySelector('#nextButton').addEventListener('click', () => move(1));
+document.querySelector('#playButton').addEventListener('click', async () => { clickSound('select'); if (!audio.src && tracks.length) { await playTrack(tracks[0].id); return; } playing = !playing; if (playing) await audio.play(); else audio.pause(); updateMediaSession(); nowPlaying.textContent = playing ? 'Playing' : 'Paused'; nowPlaying.classList.add('active'); });
+audio.addEventListener('play', () => { playing = true; updateMediaSession(); });
+audio.addEventListener('pause', () => { playing = false; updateMediaSession(); });
+audio.addEventListener('ended', () => { playing = false; updateMediaSession(); nowPlaying.textContent = 'Finished playing'; nowPlaying.classList.add('active'); });
+if ('mediaSession' in navigator) {
+  navigator.mediaSession.setActionHandler('play', () => { if (audio.src) audio.play(); });
+  navigator.mediaSession.setActionHandler('pause', () => audio.pause());
+  navigator.mediaSession.setActionHandler('nexttrack', () => move(1));
+  navigator.mediaSession.setActionHandler('previoustrack', () => move(-1));
+}
+filePicker.addEventListener('change', async () => { const wavs = [...filePicker.files].filter(file => file.type === 'audio/wav' || /\.wav$/i.test(file.name)); if (!wavs.length) { nowPlaying.textContent = 'Please choose WAV audio files'; nowPlaying.classList.add('active'); return; } try { for (const file of wavs) { const record = { id: crypto.randomUUID(), name: file.name.replace(/\.wav$/i, ''), addedAt: Date.now(), blob: file }; await dbRequest('readwrite', store => store.put(record)); tracks.push(record); } saveTrackIndex(); index = 0; render(); nowPlaying.textContent = `${wavs.length} WAV file${wavs.length === 1 ? '' : 's'} added to Library`; nowPlaying.classList.add('active'); } catch { nowPlaying.textContent = 'Could not save these audio files'; nowPlaying.classList.add('active'); } filePicker.value = ''; });
+const wheel = document.querySelector('.wheel'); let drag = null;
+const angleAt = (event) => { const rect = wheel.getBoundingClientRect(); return Math.atan2(event.clientY - rect.top - rect.height / 2, event.clientX - rect.left - rect.width / 2); };
+wheel.addEventListener('pointerdown', event => { if (event.target.closest('button')) return; drag = { angle: angleAt(event), travel: 0, startX: event.clientX, startY: event.clientY }; wheel.setPointerCapture(event.pointerId); });
+wheel.addEventListener('pointermove', event => { if (!drag) return; const nextAngle = angleAt(event); let delta = nextAngle - drag.angle; if (delta > Math.PI) delta -= Math.PI * 2; if (delta < -Math.PI) delta += Math.PI * 2; drag.angle = nextAngle; drag.travel += delta; const step = Math.PI / 7.5; while (Math.abs(drag.travel) >= step) { move(drag.travel > 0 ? 1 : -1); drag.travel -= Math.sign(drag.travel) * step; } });
+wheel.addEventListener('pointerup', event => { if (!drag) return; const rect = wheel.getBoundingClientRect(); const dx = event.clientX - rect.left - rect.width / 2; const dy = event.clientY - rect.top - rect.height / 2; const distance = Math.hypot(dx, dy); const wasTap = Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) < 10; drag = null; if (!wasTap) return; if (distance < rect.width * 0.22) select(); else if (Math.abs(dx) > Math.abs(dy)) move(dx > 0 ? 1 : -1); else if (dy < 0) back(); else document.querySelector('#playButton').click(); });
+wheel.addEventListener('wheel', e => { e.preventDefault(); move(e.deltaY > 0 ? 1 : -1); }, { passive: false });
+document.addEventListener('keydown', e => { if (e.key === 'ArrowDown' || e.key === 'ArrowRight') move(1); else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') move(-1); else if (e.key === 'Enter') select(); else if (e.key === 'Escape' || e.key.toLowerCase() === 'm') back(); else if (e.key === ' ') document.querySelector('#playButton').click(); });
+render(); restoreLibrary();
+  </script>
+</body>
+</html>
